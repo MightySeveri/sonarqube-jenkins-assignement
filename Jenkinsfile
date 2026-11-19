@@ -16,44 +16,46 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
-
-        stage('Test and jacoco') {
+        stage('Build, Test and Coverage') {
             steps {
                 sh 'mvn clean verify'
             }
             post {
                 always {
                     junit 'target/surefire-reports/*.xml'
+                }
+                success {
+                    archiveArtifacts artifacts: 'target/site/jacoco/**'
                     jacoco(
                         execPattern: 'target/jacoco.exec',
                         classPattern: 'target/classes',
-                        sourcePattern: '.'
+                        sourcePattern: 'src/main/java'
                     )
-                    archiveArtifacts artifacts: 'target/site/jacoco/**', allowEmptyArchive: true
                 }
             }
         }
 
+
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
-                    sh '''
-                        sonar-scanner \
-                        -Dsonar.projectKey=BMI_CL \
-                        -Dsonar.sources=src \
-                        -Dsonar.projectName=BMI_CL \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.java.binaries=target/classes \
-                        -Dsonar.token="$SONAR_TOKEN"
-                    '''
+                script {
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
+                        sh """
+                            "${scannerHome}/bin/sonar-scanner" \
+                            -Dsonar.projectKey=BMI_CL \
+                            -Dsonar.sources=src \
+                            -Dsonar.projectName=BMI_CL \
+                            -Dsonar.host.url=http://localhost:9000 \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.token="\$SONAR_TOKEN"
+                        """
+                    }
                 }
             }
         }
+
 
         stage('Build Docker Image') {
             steps {

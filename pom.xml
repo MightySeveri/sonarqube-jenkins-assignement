@@ -11,6 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <argLine></argLine>
         <junit.version>5.10.2</junit.version>
         <mockito.version>5.14.2</mockito.version>
     </properties>
@@ -112,7 +113,7 @@
                 <version>3.5.4</version>
                 <configuration>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-                    <argLine>-javaagent:"${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar"</argLine>
+                    <argLine>@{argLine} -javaagent:"${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar"</argLine>
                     <systemPropertyVariables>
                         <!-- Allow the existing Mockito version to run on JDK 25. -->
                         <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
