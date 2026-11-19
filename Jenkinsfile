@@ -24,7 +24,7 @@ pipeline {
 
         stage('Test and jacoco') {
             steps {
-                sh 'mvn test'
+                sh 'mvn clean verify'
             }
             post {
                 always {
