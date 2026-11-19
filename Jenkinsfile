@@ -1,13 +1,12 @@
+
 pipeline {
     agent any
 
     environment {
-        // these are the environment variables (Amir's machine) that will be used in the pipeline
-       DOCKER_IMAGE = 'mightyseveri/severi-temperatureconverter-pipeline'
+        DOCKER_IMAGE = 'mightyseveri/severi-temperatureconverter-pipeline'
 
-
-        SONARQUBE_SERVER = 'http://localhost:9000'
-        SONAR_TOKEN = credentials('SONAR_TOKEN') //make sure a right token is selected
+        SONARQUBE_SERVER = 'SonarQubeServer'
+        SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
 
     stages {
@@ -34,24 +33,24 @@ pipeline {
                         execPattern: 'target/jacoco.exec',
                         classPattern: 'target/classes',
                         sourcePattern: '.'
-                        )
-                        archiveArtifacts artifacts: 'target/site/jacoco/**', allowEmptyArchive: true
-                    }
+                    )
+                    archiveArtifacts artifacts: 'target/site/jacoco/**', allowEmptyArchive: true
                 }
+            }
         }
-// Check the SonarQube analysis stage for the correct project key and name
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
-                    sh """
-                        sonar-scanner ^
-                        -Dsonar.projectKey=BMI_CL ^
-                        -Dsonar.sources=src ^
-                        -Dsonar.projectName=BMI_CL ^
-                        -Dsonar.host.url=http://localhost:9000 ^
-                        -Dsonar.login=${env.SONAR_TOKEN} ^
-                        -Dsonar.java.binaries=target/classes
-                    """
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=BMI_CL \
+                        -Dsonar.sources=src \
+                        -Dsonar.projectName=BMI_CL \
+                        -Dsonar.host.url=http://localhost:9000 \
+                        -Dsonar.java.binaries=target/classes \
+                        -Dsonar.token="$SONAR_TOKEN"
+                    '''
                 }
             }
         }
@@ -59,21 +58,26 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t "$DOCKER_IMAGE:latest" .'
-                }
             }
         }
 
         stage('Push Docker Image to Docker Hub') {
             steps {
                 withCredentials([
-                    usernamePassword(credentialsId: 'dockerhub',
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
                         usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD')
-                    }
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login \
+                            -u "$DOCKER_USERNAME" \
+                            --password-stdin
+                        docker push "$DOCKER_IMAGE:latest"
+                    '''
                 }
             }
         }
     }
-
-
 }
