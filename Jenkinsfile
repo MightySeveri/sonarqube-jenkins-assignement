@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'mightyseveri/severi-temperatureconverter-pipeline'
+        DOCKER_IMAGE = 'mightyseveri/bmi_3013_severi'
 
         SONARQUBE_SERVER = 'SonarQubeServer'
         SONAR_TOKEN = credentials('SONAR_TOKEN')
